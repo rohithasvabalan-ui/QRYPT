@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QRYPT | QR Security Scanner</title>
+
+  <!-- QR decoding library -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b1220;
+      color: #f5f7fb;
+    }
+
+    header {
+      padding: 22px;
+      text-align: center;
+      background: #111d32;
+      border-bottom: 1px solid #293750;
+    }
+
+    header h1 {
+      margin: 0;
+      color: #61d5ff;
+      letter-spacing: 3px;
+    }
+
+    header p { color: #c4cede; }
+
+    main {
+      max-width: 760px;
+      margin: 28px auto;
+      padding: 18px;
+    }
+
+    .card {
+      background: #152239;
+      border: 1px solid #2c3c56;
+      padding: 22px;
+      border-radius: 16px;
+      margin-bottom: 18px;
+    }
+
+    h2 { margin-top: 0; }
+
+    button, input[type="file"] {
+      width: 100%;
+      margin: 8px 0;
+    }
+
+    button {
+      background: #0ca8d8;
+      color: #061522;
+      font-weight: bold;
+      border: 0;
+      padding: 13px;
+      border-radius: 9px;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #263954;
+      color: white;
+      border: 1px solid #526680;
+    }
+
+    button:disabled { opacity: 0.5; }
+
+    input[type="file"] {
+      padding: 12px;
+      background: #0b1628;
+      border-radius: 8px;
+    }
+
+    video, canvas.preview {
+      width: 100%;
+      max-height: 330px;
+      object-fit: contain;
+      background: #050a12;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    #result { display: none; }
+    #result h2 { color: #61d5ff; }
+
+    .status {
+      padding: 12px;
+      border-radius: 8px;
+      margin: 12px 0;
+      font-weight: bold;
+    }
+
+    .warning { background: #49251f; color: #ffb6a8; }
+    .review { background: #493b19; color: #ffe39a; }
+    .info { background: #173d35; color: #9ef2d6; }
+
+    .data {
+      overflow-wrap: anywhere;
+      background: #0b1628;
+      padding: 12px;
+      border-radius: 8px;
+      line-height: 1.6;
+    }
+
+    .note {
+      font-size: 13px;
+      color: #bdc8d8;
+      line-height: 1.6;
+    }
+
+    footer {
+      text-align: center;
+      color: #aab7ca;
+      padding: 20px;
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <h1>QRYPT</h1>
+  <p>QR Code Security Scanner</p>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Scan a QR Code</h2>
+    <p>Upload a QR image or use your camera.</p>
+
+    <input type="file" id="fileInput" accept="image/*">
+
+    <button id="cameraBtn">Start Camera Scan</button>
+    <button class="secondary" id="stopBtn">Stop Camera</button>
+
+    <video id="video" playsinline hidden></video>
+    <canvas id="canvas" hidden></canvas>
+
+    <p id="message" class="note">
+      Your scan result will appear below.
+    </p>
+  </section>
+
+  <section class="card" id="result">
+    <h2>Security Analysis</h2>
+    <div id="status"></div>
+    <p><strong>Decoded QR data:</strong></p>
+    <div class="data" id="decoded"></div>
+    <div id="details"></div>
+    <p class="note" id="advice"></p>
+  </section>
+
+  <section class="card">
+    <h2>How QRYPT helps</h2>
+    <p>1. Decode the QR code.</p>
+    <p>2. Identify website URLs or UPI payment details.</p>
+    <p>3. Display risk indicators and verification advice.</p>
+    <p class="note">
+      This prototype uses basic checks. It cannot guarantee
+      that a website or payment QR is safe.
+    </p>
+  </section>
+</main>
+
+<footer>QRYPT | Cyber Titans</footer>
+
+<script>
+  const fileInput = document.getElementById("fileInput");
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const result = document.getElementById("result");
+  const statusBox = document.getElementById("status");
+  const decodedBox = document.getElementById("decoded");
+  const detailsBox = document.getElementById("details");
+  const adviceBox = document.getElementById("advice");
+  const message = document.getElementById("message");
+
+  let stream = null;
+  let cameraTimer = null;
+  let busy = false;
+
+  function stopCamera() {
+    if (cameraTimer) clearInterval(cameraTimer);
+    cameraTimer = null;
+
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+
+    stream = null;
+    video.srcObject = null;
+    video.hidden = true;
+    document.getElementById("cameraBtn").disabled = false;
+  }
+
+  document.getElementById("stopBtn").addEventListener("click", stopCamera);
+
+  function showStatus(text, type) {
+    statusBox.className = "status " + type;
+    statusBox.textContent = text;
+  }
+
+  function analyze(data) {
+    stopCamera();
+
+    result.style.display = "block";
+    decodedBox.textContent = data;
+    detailsBox.replaceChildren();
+    adviceBox.textContent = "";
+
+    let url;
+
+    // Payment QR: inspect UPI data without making a payment.
+    if (/^upi:\/\/pay(?:\?|$)/i.test(data)) {
+      try {
+        url = new URL(data);
+      } catch {
+        showStatus("Payment data needs review", "review");
+        adviceBox.textContent =
+          "The payment QR could not be parsed reliably.";
+        return;
+      }
+
+      const params = url.searchParams;
+      const receiver = params.get("pn") || "Not provided";
+      const upiId = params.get("pa") || "Not provided";
+      const amount = params.get("am") || "Not specified";
+
+      showStatus("Payment QR detected — verify receiver", "review");
+
+      detailsBox.textContent =
+        "Receiver name: " + receiver +
+        "\nUPI ID: " + upiId +
+        "\nAmount: " + amount;
+
+      detailsBox.className = "data";
+      detailsBox.style.whiteSpace = "pre-line";
+
+      adviceBox.textContent =
+        "Confirm the receiver name and UPI ID with the intended " +
+        "recipient before paying. These details can be forged; " +
+        "this scan does not verify the real account owner.";
+
+      return;
+    }
+
+    // Website QR: only analyze HTTP(S) links.
+    if (!/^https?:\/\//i.test(data)) {
+      showStatus("Unknown QR data — manual review required", "review");
+      adviceBox.textContent =
+        "This QR is not a standard website URL or UPI payment link. " +
+        "Do not open unfamiliar content.";
+      return;
+    }
+
+    try {
+      url = new URL(data);
+    } catch {
+      showStatus("Invalid URL", "warning");
+      return;
+    }
+
+    const reasons = [];
+    const host = url.hostname.toLowerCase();
+
+    if (url.protocol !== "https:") {
+      reasons.push("The connection does not use HTTPS.");
+    }
+
+    if (url.username || url.password) {
+      reasons.push("The URL contains embedded login credentials.");
+    }
+
+    if (host.startsWith("xn--") || host.includes(".xn--")) {
+      reasons.push("The domain uses an internationalized encoding.");
+    }
+
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+      reasons.push("The hostname is an IP address.");
+    }
+
+    if (/(login|verify|wallet|password|claim-prize)/i.test(
+      url.pathname + url.search
+    )) {
+      reasons.push("The URL contains a sensitive-action keyword.");
+    }
+
+    if (host.length > 60) {
+      reasons.push("The hostname is unusually long.");
+    }
+
+    if (reasons.length > 0) {
+      showStatus("Caution — suspicious indicators found", "warning");
+    } else {
+      showStatus("No obvious indicator found — not verified safe", "info");
+    }
+
+    const list = document.createElement("ul");
+
+    if (reasons.length === 0) {
+      const item = document.createElement("li");
+      item.textContent = "No basic warning rule was triggered.";
+      list.appendChild(item);
+    } else {
+      reasons.forEach(reason => {
+        const item = document.createElement("li");
+        item.textContent = reason;
+        list.appendChild(item);
+      });
+    }
+
+    detailsBox.appendChild(list);
+
+    adviceBox.textContent =
+      "QRYPT uses basic URL rules only. It does not check a live " +
+      "malware database, and these rules can miss malicious links " +
+      "or flag legitimate ones. Do not open the link automatically.";
+  }
+
+  function decodeImage(image) {
+    if (!window.jsQR) {
+      message.textContent =
+        "QR library unavailable. Check your internet connection.";
+      return;
+    }
+
+    canvas.width = image.naturalWidth || image.videoWidth;
+    canvas.height = image.naturalHeight || image.videoHeight;
+
+    if (!canvas.width || !canvas.height) {
+      message.textContent = "Unable to read this image.";
+      return;
+    }
+
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const pixels = ctx.getImageData(
+      0, 0, canvas.width, canvas.height
+    );
+
+    const code = jsQR(
+      pixels.data, pixels.width, pixels.height
+    );
+
+    if (code) {
+      message.textContent = "QR code decoded successfully.";
+      analyze(code.data);
+    } else {
+      message.textContent =
+        "No QR code detected. Try a clearer image.";
+    }
+  }
+
+  fileInput.addEventListener("change", event => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      message.textContent = "Please select an image file.";
+      return;
+    }
+
+    stopCamera();
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    image.onload = () => {
+      decodeImage(image);
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      message.textContent = "Unable to load the image.";
+    };
+
+    image.src = objectUrl;
+  });
+
+  document.getElementById("cameraBtn").addEventListener(
+    "click", async () => {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        message.textContent =
+          "Camera unavailable. Use localhost or HTTPS, or upload an image.";
+        return;
+      }
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: false
+        });
+
+        video.srcObject = stream;
+        video.hidden = false;
+        await video.play();
+
+        document.getElementById("cameraBtn").disabled = true;
+        message.textContent = "Point your camera at a QR code.";
+
+        cameraTimer = setInterval(() => {
+          if (busy || video.readyState < 2) return;
+          busy = true;
+
+          try {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+
+            const pixels = ctx.getImageData(
+              0, 0, canvas.width, canvas.height
+            );
+
+            const code = jsQR(
+              pixels.data, pixels.width, pixels.height
+            );
+
+            if (code) analyze(code.data);
+          } catch (error) {
+            message.textContent = "Camera scan error. Try uploading an image.";
+          } finally {
+            busy = false;
+          }
+        }, 300);
+
+      } catch (error) {
+        stopCamera();
+        message.textContent =
+          "Camera permission denied or unavailable. Upload a QR image instead.";
+      }
+    }
+  );
+</script>
+</body>
+</html>

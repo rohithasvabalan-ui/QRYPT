@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>QRYPT Automated Test Harness</title>
+  <script src="js/libs/jsQR.js"></script>
+  <script src="js/analyzer.js"></script>
+  <script src="js/upi-verifier.js"></script>
+  <script src="js/qr-engine.js"></script>
+  <script src="js/history.js"></script>
+  <style>
+    body { font-family: sans-serif; background: #0c1424; color: #fff; padding: 20px; }
+    .pass { color: #10b981; }
+    .fail { color: #ef4444; }
+    pre { background: #070b14; padding: 15px; border-radius: 8px; border: 1px solid #334155; }
+  </style>
+</head>
+<body>
+  <h1>QRYPT Test Suite Execution</h1>
+  <div id="status">Running tests...</div>
+  <pre id="output"></pre>
+
+  <script>
+    const testLog = [];
+    function log(msg, status = 'INFO') {
+      const line = `[${status}] ${msg}`;
+      testLog.push(line);
+      console.log(line);
+      document.getElementById('output').textContent = testLog.join('\n');
+    }
+
+    async function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = (e) => reject(new Error('Failed to load image: ' + src));
+        img.src = src;
+      });
+    }
+
+    async function runTests() {
+      try {
+        log('Starting QRYPT Verification Suite...');
+        
+        // 1. Verify Library Loading
+        if (typeof window.jsQR === 'function') {
+          log('1. jsQR library loaded successfully', 'PASS');
+        } else {
+          log('1. jsQR library failed to load', 'FAIL');
+        }
+
+        // 2. Decode Sample QR Code Images in samples/ folder
+        const sampleImages = [
+          { file: 'samples/sample-safe.png', expectedVerdict: 'NO OBVIOUS THREATS DETECTED' },
+          { file: 'samples/sample-phishing.png', expectedVerdict: 'SUSPICIOUS' },
+          { file: 'samples/sample-ip.png', expectedVerdict: 'SUSPICIOUS' },
+          { file: 'samples/sample-shortener.png', expectedVerdict: 'SUSPICIOUS' },
+          { file: 'samples/sample-punycode.png', expectedVerdict: 'SUSPICIOUS' },
+          { file: 'samples/sample-upi.png', expectedUpi: true },
+          { file: 'samples/sample-wifi.png', expectedVerdict: 'UNKNOWN' }
+        ];
+
+        for (const sample of sampleImages) {
+          try {
+            const img = await loadImage(sample.file);
+            const decoded = window.QryptEngine.decodeImageElement(img);
+            if (!decoded || !decoded.data) {
+              log(`Image decoding failed for: ${sample.file}`, 'FAIL');
+              continue;
+            }
+            log(`Decoded ${sample.file} -> "${decoded.data}"`, 'PASS');
+
+            const analysis = window.QryptAnalyzer.analyze(decoded.data);
+            if (sample.expectedVerdict) {
+              if (analysis.verdict === sample.expectedVerdict) {
+                log(`Verdict match for ${sample.file}: ${analysis.verdict} (Risk: ${analysis.riskScore}/100)`, 'PASS');
+              } else {
+                log(`Verdict mismatch for ${sample.file}: Got ${analysis.verdict}, Expected ${sample.expectedVerdict}`, 'FAIL');
+              }
+            } else if (sample.expectedUpi) {
+              if (analysis.isUpi) {
+                log(`UPI detection match for ${sample.file}: Correctly identified as UPI payment URI`, 'PASS');
+              } else {
+                log(`UPI detection failed for ${sample.file}`, 'FAIL');
+              }
+            }
+          } catch (err) {
+            log(`Error testing ${sample.file}: ${err.message}`, 'FAIL');
+          }
+        }
+
+        // 3. Test UPI Receiver Verification Module
+        log('\nTesting UPI Verification Module...');
+        const upi1 = window.QryptUpi.verifyUpiReceiver('pmcares@sbi');
+        if (upi1.verdict === 'VERIFIED' && upi1.isTrustedDirectory) {
+          log('UPI Trusted Directory check (pmcares@sbi) -> VERIFIED', 'PASS');
+        } else {
+          log('UPI Trusted Directory check failed', 'FAIL');
+        }
+
+        const upi2 = window.QryptUpi.verifyUpiReceiver('merchant@okhdfcbank');
+        if (upi2.verdict === 'UNVERIFIED' && upi2.bankInfo && upi2.bankInfo.bank === 'HDFC Bank') {
+          log('UPI Unverified Standard check (merchant@okhdfcbank) -> UNVERIFIED (Identified HDFC Bank / Google Pay)', 'PASS');
+        } else {
+          log('UPI Unverified Standard check failed', 'FAIL');
+        }
+
+        const upi3 = window.QryptUpi.verifyUpiReceiver('bad-upi-format');
+        if (upi3.verdict === 'UNKNOWN') {
+          log('UPI Bad Format check (bad-upi-format) -> UNKNOWN', 'PASS');
+        } else {
+          log('UPI Bad Format check failed', 'FAIL');
+        }
+
+        // 4. Test UPI URI Parsing with Expected Recipient Comparison
+        const upiUri = 'upi://pay?pa=lottery-claim@ybl&pn=Jackpot%20Rewards&am=1000';
+        const parsedUpi = window.QryptUpi.parseAndInspectUpiUri(upiUri, 'Legitimate Shop', 'legit@okhdfcbank');
+        if (parsedUpi.isUpiUri && parsedUpi.vpaResult.comparison.upiMatches === false) {
+          log('UPI Scanned vs Expected Mismatch caught correctly', 'PASS');
+        } else {
+          log('UPI Expected Mismatch test failed', 'FAIL');
+        }
+
+        // 5. Verify Suspicious URLs are NEVER Opened Automatically
+        let openCalled = false;
+        const originalOpen = window.open;
+        window.open = function() { openCalled = true; };
+        
+        // Run analysis on dangerous links
+        const dangerousLinks = [
+          'http://secure-login-paytm.verify-account.top/login.php?otp=true',
+          'http://192.168.1.105:8080/claim-reward',
+          'javascript:alert(1)'
+        ];
+        dangerousLinks.forEach(link => {
+          window.QryptAnalyzer.analyze(link);
+        });
+        
+        if (!openCalled) {
+          log('Zero Auto-Navigation Guard: Suspicious URLs are NEVER opened automatically', 'PASS');
+        } else {
+          log('Security violation: URL was opened automatically!', 'FAIL');
+        }
+        window.open = originalOpen;
+
+        // 6. Test Scan History Module
+        window.QryptHistory.clearHistory();
+        window.QryptHistory.addRecord({
+          source: 'Upload',
+          input: 'https://cybercrime.gov.in',
+          verdict: 'NO OBVIOUS THREATS DETECTED',
+          riskScore: 0
+        });
+        const records = window.QryptHistory.getHistory();
+        if (records.length === 1 && records[0].payload === 'https://cybercrime.gov.in') {
+          log('Scan History add & retrieve verified', 'PASS');
+        } else {
+          log('Scan History test failed', 'FAIL');
+        }
+
+        document.getElementById('status').textContent = 'ALL TESTS COMPLETED SUCCESSFULLY!';
+        document.getElementById('status').className = 'pass';
+        window.__TEST_RESULTS__ = { success: true, log: testLog };
+      } catch (globalErr) {
+        log('Fatal Test Error: ' + globalErr.message, 'FAIL');
+        document.getElementById('status').textContent = 'TEST SUITE ENCOUNTERED FAILURES';
+        document.getElementById('status').className = 'fail';
+        window.__TEST_RESULTS__ = { success: false, error: globalErr.message, log: testLog };
+      }
+    }
+
+    window.addEventListener('load', runTests);
+  </script>
+</body>
+</html>

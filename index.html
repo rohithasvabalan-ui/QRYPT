@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QRYPT – QR Code Protection | Team Cyber Titans</title>
+  <meta name="description" content="QRYPT – QR Code Protection cybersecurity dashboard. Scan smart, stay secure against malicious QR codes, phishing redirects, and fraudulent payment pages.">
+
+  <!-- Favicon / SVG Icon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5ff'><path d='M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z'/></svg>">
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="css/styles.css">
+
+  <!-- QR Decoding Library (Local offline copy first, with CDN fallback) -->
+  <script src="js/libs/jsQR.js"></script>
+  <script>
+    if (typeof window.jsQR === 'undefined') {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"><\/script>');
+    }
+  </script>
+</head>
+
+<body>
+  <!-- Application Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-section">
+        <div class="brand-logo-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 2.18l7 3.12v4.7c0 4.54-3.04 8.79-7 9.93-3.96-1.14-7-5.39-7-9.93V6.3l7-3.12zM11 7h2v6h-2zm0 8h2v2h-2z"/>
+          </svg>
+        </div>
+        <div class="brand-titles">
+          <h1 class="brand-name">QRYPT <span>// QR Code Protection</span></h1>
+          <p class="brand-subtitle">Scan Smart. Stay Secure.</p>
+        </div>
+      </div>
+
+      <div class="header-meta">
+        <div class="team-badge">
+          <span class="pulse-dot" aria-hidden="true"></span>
+          <span>Team Cyber Titans</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="dashboard-nav" aria-label="Main Navigation">
+    <button class="nav-tab-btn active" data-target="scanner">
+      <svg viewBox="0 0 24 24"><path d="M3 7V3h4m10 0h4v4M3 17v4h4m10 0h4v-4M9 9h6v6H9z"/></svg>
+      QR Scanner &amp; Decoder
+    </button>
+    <button class="nav-tab-btn" data-target="manual">
+      <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+      Direct URL Threat Checker
+    </button>
+    <button class="nav-tab-btn" data-target="upi">
+      <svg viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+      UPI Receiver Verification
+    </button>
+    <button class="nav-tab-btn" data-target="history">
+      <svg viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Scan History
+    </button>
+    <button class="nav-tab-btn" data-target="rules">
+      <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      Security Rules &amp; Guide
+    </button>
+  </nav>
+
+  <!-- Main Content Wrapper -->
+  <main class="main-wrapper">
+
+    <!-- VIEW 1: QR SCANNER & DECODER -->
+    <section id="view-scanner" class="view-panel">
+      <div class="qrypt-card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+            QR Code Ingestion &amp; Image Decoder
+          </div>
+          <span style="font-size:0.8rem; color:var(--cyan-primary); font-weight:600;">Client-Side Sandbox</span>
+        </div>
+        <p class="card-subtitle">
+          Upload a QR image, capture via camera, or paste from your clipboard. The payload is safely decoded without executing or visiting any destination.
+        </p>
+
+        <!-- Dropzone Container -->
+        <div class="dropzone-container" id="dropzone">
+          <div class="dropzone-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          </div>
+          <h2 class="dropzone-title">Drag &amp; Drop QR Image Here</h2>
+          <p class="dropzone-desc">Supports PNG, JPG, WEBP, or SVG image formats</p>
+          <span class="dropzone-hint">Tip: You can also press Ctrl+V to paste an image screenshot directly</span>
+        </div>
+
+        <!-- Hidden input for file picker -->
+        <input type="file" id="file-input" class="hidden-file-input" accept="image/*">
+
+        <!-- Action Buttons -->
+        <div class="scanner-actions">
+          <button id="select-file-btn" class="btn btn-primary" style="flex:1;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Choose Image File
+          </button>
+          <button id="start-camera-btn" class="btn btn-secondary" style="flex:1;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            Start Camera Scanner
+          </button>
+          <button id="stop-camera-btn" class="btn btn-danger" style="display:none;" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/></svg>
+            Stop Camera
+          </button>
+        </div>
+
+        <!-- Camera Viewfinder -->
+        <div id="camera-container" class="camera-viewfinder" style="display:none;">
+          <video id="camera-video" class="camera-video" playsinline></video>
+          <div class="camera-scanline"></div>
+          <div class="camera-hud-corners"></div>
+        </div>
+
+        <!-- Sample Test Chips -->
+        <div class="sample-bar">
+          <div class="sample-bar-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            Instant Cybersecurity Test Cases
+          </div>
+          <div class="sample-chips">
+            <button class="sample-chip" data-payload="https://cybercrime.gov.in">
+              <span style="color:#10b981;">&#x2714;</span> Safe Portal (Gov)
+            </button>
+            <button class="sample-chip danger-chip" data-payload="http://secure-login-paytm.verify-account.top/login.php?otp=true">
+              <span style="color:#ef4444;">&#x26A0;</span> Phishing Brand Spoof
+            </button>
+            <button class="sample-chip danger-chip" data-payload="http://192.168.1.105:8080/claim-reward">
+              <span style="color:#ef4444;">&#x26A0;</span> Raw IP &amp; Port
+            </button>
+            <button class="sample-chip" data-payload="https://bit.ly/3xPhishCode">
+              <span style="color:#f59e0b;">&#x21C4;</span> URL Shortener
+            </button>
+            <button class="sample-chip danger-chip" data-payload="https://xn--appl-45a.com/verify-account">
+              <span style="color:#ef4444;">&#x26A0;</span> Punycode Homograph
+            </button>
+            <button class="sample-chip" data-payload="upi://pay?pa=lottery-claim@ybl&pn=Jackpot%20Rewards&am=1000">
+              <span style="color:#a855f7;">&#x20B9;</span> Payment UPI QR
+            </button>
+            <button class="sample-chip" data-payload="WIFI:T:WPA;S:OfficeNet;P:CyberTitans2026;;">
+              <span style="color:#94a3b8;">&#x25C9;</span> Raw Wi-Fi Config
+            </button>
+          </div>
+        </div>
+
+        <!-- Spinner Overlay -->
+        <div id="scanner-spinner" class="spinner-overlay" style="display:none;">
+          <div class="cyber-spinner"></div>
+          <div class="spinner-text">Decoding QR Image...</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: MANUAL URL THREAT CHECKER -->
+    <section id="view-manual" class="view-panel" style="display:none;">
+      <div class="qrypt-card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+            Direct URL &amp; Text Threat Analyzer
+          </div>
+          <span style="font-size:0.8rem; color:var(--cyan-primary); font-weight:600;">Manual Inspection</span>
+        </div>
+        <p class="card-subtitle">
+          Paste any website URL, shortened link, or suspicious text to run transparent heuristic threat detection without uploading a QR code.
+        </p>
+
+        <div class="input-group">
+          <label for="manual-url-input" class="input-label">Enter Target URL or Decoded Text String:</label>
+          <input
+            type="text"
+            id="manual-url-input"
+            class="text-input"
+            placeholder="e.g. http://secure-login-paytm.verify-account.top/login.php"
+            autocomplete="off"
+            spellcheck="false"
+          >
+        </div>
+
+        <div style="display:flex; gap:0.75rem;">
+          <button id="analyze-manual-btn" class="btn btn-primary" style="flex:1;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            Execute Threat Analysis
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECURITY ANALYSIS REPORT (Shared Output for Scanner & Manual) -->
+    <div id="report-container" class="report-container">
+      <div class="qrypt-card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Security Analysis Report
+          </div>
+          <span style="font-size:0.8rem; color:var(--purple-neon); font-weight:600;">Rule-Based Threat Model</span>
+        </div>
+
+        <!-- Master Verdict Banner -->
+        <div id="verdict-banner" class="verdict-banner suspicious">
+          <div class="verdict-info">
+            <div id="verdict-icon" class="verdict-icon">
+              <!-- Injected dynamically -->
+            </div>
+            <div>
+              <div class="verdict-label-sub">Security Assessment Result</div>
+              <div id="verdict-title" class="verdict-title">SUSPICIOUS</div>
+              <div id="verdict-tagline" class="verdict-tagline">Evaluation summary description</div>
+            </div>
+          </div>
+
+          <div class="risk-gauge-box">
+            <div id="risk-score-num" class="risk-score-num">0</div>
+            <div class="risk-score-label">Risk Score / 100</div>
+            <span id="risk-level-pill" class="risk-level-pill">HIGH RISK</span>
+          </div>
+        </div>
+
+        <!-- Extracted URL / Data Container -->
+        <div class="decoded-box">
+          <div class="decoded-header">
+            <span class="decoded-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+              Extracted URL / Decoded Payload
+            </span>
+            <span class="safe-never-open-badge">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+              NEVER AUTOMATICALLY OPENED
+            </span>
+          </div>
+
+          <div id="decoded-content" class="decoded-content">
+            <!-- Injected dynamically -->
+          </div>
+
+          <div class="decoded-tools">
+            <button id="copy-url-btn" class="btn btn-secondary btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              Copy Extracted Text (Safe Caution)
+            </button>
+          </div>
+        </div>
+
+        <!-- Detected Warning Reasons -->
+        <div id="warnings-section" class="warnings-section">
+          <h3 class="section-heading">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            Detected Threat &amp; Warning Indicators
+          </h3>
+          <div id="warnings-list">
+            <!-- Injected dynamically -->
+          </div>
+        </div>
+
+        <!-- Actionable Recommended Next Steps -->
+        <div class="recommendations-box">
+          <h3 class="section-heading" style="color:var(--cyan-primary);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Recommended Cybersecurity Next Steps
+          </h3>
+          <ul id="recommendations-list" class="rec-list">
+            <!-- Injected dynamically -->
+          </ul>
+        </div>
+
+        <!-- Transparent Rules Evaluated Checklist -->
+        <details class="rules-breakdown-details">
+          <summary>
+            <span>View Full Heuristic Evaluation Checklist (11 Transparent Security Rules)</span>
+            <span style="font-size:0.75rem; color:var(--text-dim);">&#x25BC; Expand</span>
+          </summary>
+          <div id="rules-list" class="rules-list">
+            <!-- Injected dynamically -->
+          </div>
+        </details>
+
+        <!-- Heuristic Limitations Disclosure -->
+        <div class="heuristic-disclaimer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <div>
+            <strong>Transparent Security Rule-Based Notice:</strong>
+            QRYPT analyzes structural indicators, hostname syntax, TLD risk, and protocol encryption. While this identifies common deceptive patterns and typosquatting traps, rule-based heuristics cannot guarantee safety for novel zero-day phishing sites or newly created domains without live behavioral sandboxing. Always exercise caution.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: UPI RECEIVER VERIFICATION MODULE -->
+    <section id="view-upi" class="view-panel" style="display:none;">
+      <div class="qrypt-card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            UPI Payment Protection &amp; Receiver Verification Module
+          </div>
+          <span style="font-size:0.8rem; color:var(--purple-neon); font-weight:600;">NPCI VPA Inspector</span>
+        </div>
+        <p class="card-subtitle">
+          Verify UPI Virtual Payment Addresses (VPAs) before authorizing transactions. Inspect bank PSP handles, validate syntax, and compare scanned payment QR parameters against expected recipient details.
+        </p>
+
+        <div class="upi-grid">
+          <!-- Input Form -->
+          <div>
+            <div class="input-group">
+              <label for="upi-input" class="input-label">Target UPI ID to Verify (VPA):</label>
+              <input
+                type="text"
+                id="upi-input"
+                class="text-input"
+                placeholder="e.g. merchant@okhdfcbank or pmcares@sbi"
+                spellcheck="false"
+              >
+            </div>
+
+            <div class="input-group">
+              <label for="expected-name-input" class="input-label">Expected Payee Name (Optional cross-check):</label>
+              <input
+                type="text"
+                id="expected-name-input"
+                class="text-input"
+                placeholder="e.g. Demo Shop / Central Utility"
+              >
+            </div>
+
+            <div class="input-group">
+              <label for="expected-upi-input" class="input-label">Expected UPI ID (Optional cross-check):</label>
+              <input
+                type="text"
+                id="expected-upi-input"
+                class="text-input"
+                placeholder="e.g. shop@upi"
+                spellcheck="false"
+              >
+            </div>
+
+            <button id="verify-upi-btn" class="btn btn-purple" style="width:100%;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              Verify UPI Receiver
+            </button>
+          </div>
+
+          <!-- Result & Educational Box -->
+          <div>
+            <!-- Verification Output Report -->
+            <div id="upi-report" class="upi-verdict-box" style="display:none;">
+              <span id="upi-verdict-badge" class="upi-verdict-badge UNVERIFIED">UNVERIFIED</span>
+              <p id="upi-verdict-msg" style="font-size:0.86rem; color:#e2e8f0; margin-bottom:0.8rem;"></p>
+
+              <div id="upi-warnings-box" style="display:none; margin-bottom:0.8rem;"></div>
+
+              <table class="upi-info-table">
+                <tbody id="upi-table-body">
+                  <!-- Injected dynamically -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Reverse QR Scam Educational Advisory -->
+            <div class="upi-scam-alert-card">
+              <div class="upi-scam-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                Golden Rule: Never Scan a QR to Receive Money
+              </div>
+              <p class="upi-scam-text">
+                Fraudsters frequently send QR codes claiming: <em>"Scan this QR code to receive cashback / refund / lottery payment."</em>
+                In the UPI architecture, <strong>scanning a QR code only AUTHORIZES OUTGOING PAYMENTS</strong> from your account. You NEVER need to scan a QR code or enter your secret UPI PIN to receive money!
+              </p>
+            </div>
+
+            <!-- Transparency Disclaimer -->
+            <div style="font-size:0.75rem; color:var(--text-dim); margin-top:0.8rem; line-height:1.4;">
+              * Regulatory Note: NPCI VPA lookup services require an authorized RBI banking license and licensed PSP integration. QRYPT performs syntax validation, bank PSP registry inspection, and verified institutional directory matching. Always confirm the green checkmark receiver name on your official mobile banking screen before PIN entry.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: SCAN HISTORY -->
+    <section id="view-history" class="view-panel" style="display:none;">
+      <div class="qrypt-card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Local Scan &amp; Ingestion History
+          </div>
+          <span style="font-size:0.8rem; color:var(--cyan-primary); font-weight:600;">Browser Storage (LocalStorage)</span>
+        </div>
+        <p class="card-subtitle">
+          Review recent scan outcomes, threat verdicts, and risk scores. Data is preserved locally in your browser and can be cleared or exported at any time.
+        </p>
+
+        <!-- History Controls -->
+        <div class="history-controls">
+          <div class="history-filter-group">
+            <button class="filter-btn history-filter-btn active" data-filter="all">All Scans</button>
+            <button class="filter-btn history-filter-btn" data-filter="suspicious">Suspicious</button>
+            <button class="filter-btn history-filter-btn" data-filter="safe">No Obvious Threats</button>
+            <button class="filter-btn history-filter-btn" data-filter="unknown">Unknown</button>
+          </div>
+
+          <div style="display:flex; gap:0.6rem;">
+            <button id="export-history-btn" class="btn btn-secondary btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              Export JSON Log
+            </button>
+            <button id="clear-history-btn" class="btn btn-danger btn-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              Clear History
+            </button>
+          </div>
+        </div>
+
+        <!-- History Table -->
+        <div id="history-table-wrapper" class="history-table-wrapper">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Source</th>
+                <th>Decoded Payload</th>
+                <th>Verdict</th>
+                <th>Risk Score</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <!-- Injected dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State -->
+        <div id="history-empty-state" class="empty-state" style="display:none;">
+          <svg class="empty-state-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+          <div class="empty-state-title">No Scan Records Found</div>
+          <p class="empty-state-desc">Upload a QR code or run a direct URL check to build your security inspection history.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: SECURITY RULES & THREAT MODEL -->
+    <section id="view-rules" class="view-panel" style="display:none;">
+      <div class="qrypt-card">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            QRYPT Threat Model &amp; Security Rule Specifications
+          </div>
+          <span style="font-size:0.8rem; color:var(--cyan-primary); font-weight:600;">Transparent Cybersecurity Standards</span>
+        </div>
+
+        <div style="font-size:0.9rem; color:#cbd5e1; line-height:1.6; display:flex; flex-direction:column; gap:1.2rem;">
+          <p>
+            <strong>The "Quishing" (QR Phishing) Threat:</strong> QR codes are visually opaque machine-readable matrices. Humans cannot read encoded destination URLs by eye. Attackers exploit this blind spot by pasting malicious QR stickers over legitimate restaurant menus, parking payment meters, transit hubs, and bank posters. When scanned, these codes redirect unsuspecting users to credential phishing pages or fraudulent payment destinations.
+          </p>
+
+          <h3 style="color:#ffffff; font-size:1.05rem; margin-top:0.5rem;">The 11 Core Heuristic Security Checks</h3>
+          
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1rem;">
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:1rem;">
+              <h4 style="color:var(--cyan-primary); margin-bottom:0.4rem;">1. Protocol Encryption (HTTPS)</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Flags unencrypted HTTP connections that allow network sniffing or MitM tampering.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:1rem;">
+              <h4 style="color:var(--cyan-primary); margin-bottom:0.4rem;">2. Raw IP Hostname Detection</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Detects raw IPv4/IPv6 addresses bypassing standard domain registration and SSL validation.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:1rem;">
+              <h4 style="color:var(--cyan-primary); margin-bottom:0.4rem;">3. URL Shortener Masking</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Identifies redirector services (bit.ly, tinyurl, etc.) masking real phishing landing pages.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:1rem;">
+              <h4 style="color:var(--cyan-primary); margin-bottom:0.4rem;">4. Brand Impersonation Traps</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Flags compound domains masquerading as high-value brands (e.g. secure-login-paytm.com).</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:1rem;">
+              <h4 style="color:var(--cyan-primary); margin-bottom:0.4rem;">5. Typosquatting / Levenshtein Distance</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Calculates edit distance against top banking &amp; tech domains to catch lookalikes (e.g. paypa1.com).</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:1rem;">
+              <h4 style="color:var(--cyan-primary); margin-bottom:0.4rem;">6. Homograph / Punycode (xn--)</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Detects internationalized domains leveraging Cyrillic or Greek lookalike glyphs.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:1rem;">
+              <h4 style="color:var(--cyan-primary); margin-bottom:0.4rem;">7. High-Abuse Top-Level Domains (TLDs)</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Flags TLDs with disproportionate historical phishing and spam density (.zip, .top, .cam, .xyz).</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:1rem;">
+              <h4 style="color:var(--cyan-primary); margin-bottom:0.4rem;">8. Embedded Credentials &amp; '@' Trick</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Catches authority confusion where browser directs to host following the '@' delimiter.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:1rem;">
+              <h4 style="color:var(--cyan-primary); margin-bottom:0.4rem;">9. Non-Standard Port Numbers</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Flags unusual port bindings (:8080, :8443, :22) commonly utilized in disposable malware hosts.</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:1rem;">
+              <h4 style="color:var(--cyan-primary); margin-bottom:0.4rem;">10. Sensitive Action &amp; Incentive Keywords</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Detects phishing lures in path/query (login, verify, otp, kyc, cashback, lottery, apk).</p>
+            </div>
+            <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:1rem;">
+              <h4 style="color:var(--cyan-primary); margin-bottom:0.4rem;">11. Excessive Nesting &amp; Path Length</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Identifies abnormal URL lengths and excessive subdomain hierarchies designed to deceive mobile address bars.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- CAUTION COPY CONFIRMATION MODAL -->
+  <div id="caution-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modal-title" class="modal-title" style="color:#fca5a5; display:flex; align-items:center; gap:0.5rem;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          Security Caution Notice
+        </h3>
+        <button id="modal-close-btn" class="modal-close-btn" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="margin-bottom:0.8rem;">
+          You are copying an extracted URL string to your clipboard.
+        </p>
+        <div id="modal-payload-text" style="font-family:var(--font-mono); font-size:0.8rem; background:#020617; padding:0.75rem; border-radius:6px; word-break:break-all; border:1px solid rgba(255,255,255,0.08); margin-bottom:0.8rem; color:#fca5a5;"></div>
+        <p style="font-size:0.82rem; color:var(--text-muted);">
+          <strong>Critical Warning:</strong> Never paste this link into a web browser, terminal, or chat without independent domain verification. QRYPT will never open links automatically.
+        </p>
+      </div>
+
+      <div class="modal-actions">
+        <button id="modal-cancel-btn" class="btn btn-secondary btn-sm">Cancel</button>
+        <button id="modal-confirm-copy-btn" class="btn btn-primary btn-sm">I Understand, Copy Text</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Application Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div class="footer-credits">
+        <strong>QRYPT</strong> – QR Code Protection &bull; Developed by <span>Team Cyber Titans</span>
+      </div>
+      <p class="footer-disclaimer">
+        Cybersecurity Demonstration Prototype. Designed for educational threat analysis, phishing prevention, and payment QR safety inspection. Always verify critical banking credentials and destination domains independently.
+      </p>
+    </div>
+  </footer>
+
+  <!-- Application Scripts -->
+  <script src="js/analyzer.js"></script>
+  <script src="js/upi-verifier.js"></script>
+  <script src="js/qr-engine.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

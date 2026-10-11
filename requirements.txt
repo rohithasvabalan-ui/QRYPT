@@ -1,0 +1,4 @@
+# QRYPT – QR Code Protection
+# Backend Dependencies
+Flask>=2.3.0
+Werkzeug>=2.3.0
